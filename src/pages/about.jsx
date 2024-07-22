@@ -3,13 +3,17 @@ import { Sheet, Button, Page, Text, useNavigate } from "zmp-ui";
 import  "./index.jsx";
 import ChargeStation from "../chargeStation.js";
 import HomePage from "./index.jsx";
+import info_window from "../info_window";
 const AboutPage = (props) => {
   const [actionSheetOpened, setActionSheetOpened] = React.useState(false);
   const navigate = useNavigate()
   return (
     <Page className="page">
+      <info_window>
+        <h1>this is the info window</h1>
+      </info_window>
       <div className="section-container">
-        {HomePage.currentLocation}
+        
       </div>
       <div>
       <Button

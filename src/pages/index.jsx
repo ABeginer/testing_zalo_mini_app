@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { List, Page, Icon, useNavigate } from "zmp-ui";
+import { openPhone } from "zmp-sdk/apis";
 import axios from "axios";
 import UserCard from "../components/user-card";
 import {
@@ -10,17 +11,17 @@ import {
 } from "@react-google-maps/api";
 import ChargeStation from "../chargeStation.js";
 import { redirect } from "react-router-dom";
+
 let chargeStationCollection = [];
 let nearByStation = [];
-let currentLocation ;
+let currentLocation;
+
 async function fetchData(locations, setLocations) {
   try {
     await axios
-      .get("http://172.16.11.139:14000/api/v1/locations")
+      .get("http://172.16.11.139:14000/api/v1/locations?page_size=10000")
       .then((res) => {
-        console.log(res.data);
-        //var o = JSON.stringify(res.data);
-
+        
         for (let i = 0; i < res.data.founds.length; i++) {
           let d = res.data.founds[i];
           let cs = new ChargeStation(
@@ -43,10 +44,7 @@ async function fetchData(locations, setLocations) {
             d.order_by
           );
 
-          // ch.latitude(String(d.latitude))
-          // console.log("the loop is running");
           chargeStationCollection.push(cs);
-          //  console.log(d);
         }
       })
       .catch((err) => {
@@ -56,16 +54,38 @@ async function fetchData(locations, setLocations) {
     console.log(err);
   }
 }
+async function fetchNearbyStationData(locations, setLocations) {
+
+}
 fetchData();
+ async function getNearbyLocationCollection (id){
+  try {
+    await axios
+      .get("http://172.16.11.139:14000/api/v1/locations/"+id)
+      .then((res) => {
+        
+        nearByStation.push(res.data)
+        
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  } catch (err) {
+    console.log(err);
+  }
+}
 function setupNearByLocation(nearByLocation, setNearByLocation) {
   for (let i = 0; i < nearByStation.length; i++) {
-    let a = i + 2;
+    let a = i ;
     let c = nearByStation[i];
 
     const newNearByLocation = {
       id: a,
       lat: c.latitude,
       lng: c.longitude,
+      name: c.street, // Assuming name is the street
+      description: c.description,
+      phone_number: c.phone_number,
     };
     setNearByLocation((prevNearByLocation) => [
       ...prevNearByLocation,
@@ -73,25 +93,13 @@ function setupNearByLocation(nearByLocation, setNearByLocation) {
     ]);
   }
 }
+
 // Converts numeric degrees to radians
 function toRad(Value) {
   return (Value * Math.PI) / 180;
 }
-// calculate distance between user and station
-function calcCrow(lat1, lon1, lat2, lon2) {
-  var R = 6371; // km
-  var dLat = toRad(lat2 - lat1);
-  var dLon = toRad(lon2 - lon1);
-  var lat1 = toRad(lat1);
-  var lat2 = toRad(lat2);
 
-  var a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  var d = R * c;
-  return d;
-}
+
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -104,12 +112,14 @@ const HomePage = () => {
   });
   const [currentLat, setCurrentLat] = useState("");
   const [currentLong, setCurrentLong] = useState("");
-  //ChargeStation ChargeStation = new ChargeStation[];
   const [locations, setLocations] = useState([]);
   const [nearByLocation, setNearByLocation] = useState([]);
+  const [searchLocation, setSearchLocation] = useState([])
   const [currentViewLocation, setCurrentViewLocaction] = useState();
   const [isFoundNearBy, setIsFoundNearBy] = useState(false);
-  let [isNearByStationVisible, setIsNearByStationVisible] = useState(true);
+  const [isNearByStationVisible, setIsNearByStationVisible] = useState(true);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -123,9 +133,6 @@ const HomePage = () => {
           console.error("Error getting location: ", error);
         }
       );
-
-      //setupLocation(locations, setLocations);
-      console.log(locations);
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
@@ -139,37 +146,53 @@ const HomePage = () => {
     setIsNearByStationVisible(false);
   };
 
-  const handleFindNearby = () => {
+  const  handleFindNearby = async () => {
+
     setIsNearByStationVisible(true);
-    if (isFoundNearBy == false) {
-      for (let i = 0; i < chargeStationCollection.length; i++) {
-        let a = calcCrow(
-          chargeStationCollection[i].latitude,
-          chargeStationCollection[i].longitude,
-          currentLat,
-          currentLong
-        );
-        if (a < 100) {
-          nearByStation.push(chargeStationCollection[i]);
-        }
+    if (!isFoundNearBy) {
+      try {
+        await axios
+          .get("http://172.16.11.139:14000/api/v1/locations/by_radius?user_lat="+currentLat+"&user_long="+currentLong+"&radius=10")
+          .then((res) => {
+            //console.log(res.data);
+            for (let i = 0; i < res.data.length; i++) {
+
+              getNearbyLocationCollection(res.data[i].id);
+              
+    
+              
+            }
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      } catch (err) {
+        console.log(err);
       }
+      console.log("nearby: "+nearByLocation)
       setIsFoundNearBy(true);
       setupNearByLocation(nearByLocation, setNearByLocation);
     }
   };
-  const handleMarkerClick = (nearByLocation) => {
-    for (let i = 0; i < chargeStationCollection.length; i++) {
-      let cs = chargeStationCollection[i];
 
-      if (
-        nearByLocation.lat == cs.latitude &&
-        nearByLocation.lng == cs.longitude
-      ) {
-        setCurrentViewLocaction(cs);
-        navigate("/about");
-        console.log(cs);
-      }
-    }
+  const handleMarkerClick = (location) => {
+    setSelectedLocation(location);
+    setCurrentViewLocaction(location);
+  };
+  const handleCallButton = (phone_number) => {
+    console.log("calling number: " + phone_number);
+    openPhone({
+      phoneNumber: phone_number,
+      success: () => {
+        // xử lý khi gọi api thành công
+        console.log("call success");
+      },
+      fail: (error) => {
+        // xử lý khi gọi api thất bại
+        console.log("call fail");
+        console.log(error);
+      },
+    });
   };
   const containerStyle = {
     width: "100%",
@@ -203,25 +226,48 @@ const HomePage = () => {
         <button style={buttonStyle} onClick={handleFindNearby}>
           Find Nearby
         </button>
-        
       </div>
-      <LoadScript googleMapsApiKey={process.env.REACT_APP_API_KEY}>
-        <GoogleMap
-          mapContainerStyle={containerStyle}
-          center={mapCenter}
-          zoom={9}
-        >
-          <Marker position={mapCenter} icon={customIcon}></Marker>
-          {nearByLocation.map((nearByLocation) => (
-            <Marker
-              visible={isNearByStationVisible}
-              key={nearByLocation.id}
-              position={{ lat: nearByLocation.lat, lng: nearByLocation.lng }}
-              onClick={() => handleMarkerClick(nearByLocation)}
-            />
-          ))}
-        </GoogleMap>
-      </LoadScript>
+      <div>
+        <LoadScript googleMapsApiKey={process.env.REACT_APP_API_KEY}>
+          <GoogleMap
+            mapContainerStyle={containerStyle}
+            center={mapCenter}
+            zoom={9}
+          >
+            <Marker position={mapCenter} icon={customIcon}></Marker>
+            {nearByLocation.map((location) => (
+              <Marker
+                visible={isNearByStationVisible}
+                key={location.id}
+                position={{ lat: location.lat, lng: location.lng }}
+                onClick={() => handleMarkerClick(location)}
+              />
+            ))}
+            {selectedLocation && (
+              <InfoWindow 
+                
+                position={{
+                  lat: selectedLocation.lat,
+                  lng: selectedLocation.lng,
+                }}
+                onCloseClick={() => setSelectedLocation(null)}
+              >
+                <div style={{ width: 400, height: 100 }}>
+                  <h1>{selectedLocation.description}</h1>
+                  
+                    <button
+                      style={buttonStyle}
+                      onClick={()=>handleCallButton(selectedLocation.phone_number)}
+                    >
+                      call charge station
+                    </button>
+                  
+                </div>
+              </InfoWindow>
+            )}
+          </GoogleMap>
+        </LoadScript>
+      </div>
     </Page>
   );
 };
