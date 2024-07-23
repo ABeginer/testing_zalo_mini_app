@@ -12,94 +12,70 @@ import {
 import ChargeStation from "../chargeStation.js";
 import { redirect } from "react-router-dom";
 
-let chargeStationCollection = [];
-let nearByStation = [];
-let currentLocation;
-
-async function fetchData(locations, setLocations) {
+const fetchData = async (setLocations) => {
   try {
-    await axios
-      .get("http://172.16.11.139:14000/api/v1/locations?page_size=10000")
-      .then((res) => {
-        
-        for (let i = 0; i < res.data.founds.length; i++) {
-          let d = res.data.founds[i];
-          let cs = new ChargeStation(
-            d.street,
-            d.district,
-            d.city,
-            d.city,
-            d.country,
-            d.postal_code,
-            d.latitude,
-            d.longitude,
-            d.description,
-            d.working_day_id,
-            d.pricing,
-            d.phone_number,
-            d.parking_level,
-            d.ordering,
-            d.page,
-            d.page_size,
-            d.order_by
-          );
-
-          chargeStationCollection.push(cs);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    const res = await axios.get(
+      "http://172.16.11.139:14000/api/v1/locations?page_size=10000"
+    );
+    const chargeStationCollection = res.data.founds.map(
+      (d) =>
+        new ChargeStation(
+          d.street,
+          d.district,
+          d.city,
+          d.city,
+          d.country,
+          d.postal_code,
+          d.latitude,
+          d.longitude,
+          d.description,
+          d.working_day_id,
+          d.pricing,
+          d.phone_number,
+          d.parking_level,
+          d.ordering,
+          d.page,
+          d.page_size,
+          d.order_by
+        )
+    );
+    setLocations(chargeStationCollection);
   } catch (err) {
-    console.log(err);
+    console.error(err);
   }
-}
-async function fetchNearbyStationData(locations, setLocations) {
+};
 
-}
-fetchData();
- async function getNearbyLocationCollection (id){
+const fetchNearbyStationData = async (
+  currentLat,
+  currentLong,
+  setNearByLocation
+) => {
   try {
-    await axios
-      .get("http://172.16.11.139:14000/api/v1/locations/"+id)
-      .then((res) => {
-        
-        nearByStation.push(res.data)
-        
+    const res = await axios.get(
+      `http://172.16.11.139:14000/api/v1/locations/by_radius?user_lat=${currentLat}&user_long=${currentLong}&radius=1`
+    );
+    const nearByStation = await Promise.all(
+      res.data.map(async (station) => {
+        const stationDetails = await axios.get(
+          `http://172.16.11.139:14000/api/v1/locations/${station.id}`
+        );
+        return stationDetails.data;
       })
-      .catch((err) => {
-        console.log(err);
-      });
+    );
+    setNearByLocation(
+      nearByStation.map((c, index) => ({
+        id: index,
+        lat: c.latitude,
+        lng: c.longitude,
+        street: c.street,
+        description: c.description,
+        phone_number: c.phone_number,
+      }))
+    );
   } catch (err) {
-    console.log(err);
+    console.error(err);
   }
-}
-function setupNearByLocation(nearByLocation, setNearByLocation) {
-  for (let i = 0; i < nearByStation.length; i++) {
-    let a = i ;
-    let c = nearByStation[i];
-
-    const newNearByLocation = {
-      id: a,
-      lat: c.latitude,
-      lng: c.longitude,
-      name: c.street, // Assuming name is the street
-      description: c.description,
-      phone_number: c.phone_number,
-    };
-    setNearByLocation((prevNearByLocation) => [
-      ...prevNearByLocation,
-      newNearByLocation,
-    ]);
-  }
-}
-
-// Converts numeric degrees to radians
-function toRad(Value) {
-  return (Value * Math.PI) / 180;
-}
-
-
+};
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -107,15 +83,12 @@ const HomePage = () => {
   const [mapCenter, setMapCenter] = useState({ lat: -3.745, lng: -38.523 });
   const [buttonStyle, setButtonStyle] = useState({
     backgroundColor: "green",
-    color: "black",
     borderRadius: "5px",
   });
-  const [currentLat, setCurrentLat] = useState("");
-  const [currentLong, setCurrentLong] = useState("");
+  const [currentLat, setCurrentLat] = useState(null);
+  const [currentLong, setCurrentLong] = useState(null);
   const [locations, setLocations] = useState([]);
   const [nearByLocation, setNearByLocation] = useState([]);
-  const [searchLocation, setSearchLocation] = useState([])
-  const [currentViewLocation, setCurrentViewLocaction] = useState();
   const [isFoundNearBy, setIsFoundNearBy] = useState(false);
   const [isNearByStationVisible, setIsNearByStationVisible] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -136,63 +109,66 @@ const HomePage = () => {
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
+
+    fetchData(setLocations);
   }, []);
 
-  const customIcon = {
-    url: "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png", // URL to custom icon image
-  };
-
-  const handleSearch = () => {
-    setIsNearByStationVisible(false);
-  };
-
-  const  handleFindNearby = async () => {
-
+  const handleSearch = async () => {
     setIsNearByStationVisible(true);
-    if (!isFoundNearBy) {
-      try {
-        await axios
-          .get("http://172.16.11.139:14000/api/v1/locations/by_radius?user_lat="+currentLat+"&user_long="+currentLong+"&radius=10")
-          .then((res) => {
-            //console.log(res.data);
-            for (let i = 0; i < res.data.length; i++) {
+    const encodedQuery = encodeURIComponent(searchInput.trim());
+    console.log(encodedQuery);
+    const searchUrl =
+      "http://172.16.11.139:14000/api/v1/locations/search?query=" +
+      encodedQuery;
 
-              getNearbyLocationCollection(res.data[i].id);
-              
-    
-              
-            }
-          })
-          .catch((err) => {
-            console.log(err);
-          });
-      } catch (err) {
-        console.log(err);
-      }
-      console.log("nearby: "+nearByLocation)
+    try {
+      const res = await axios.get(searchUrl);
+      const searchResults = res.data.map((d, index) => ({
+        id: index,
+        lat: d.latitude,
+        lng: d.longitude,
+        street: d.street,
+        description: d.description,
+        phone_number: d.phone_number,
+      }));
+      console.log(searchResults);
+      setNearByLocation(searchResults);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleFindNearby = async () => {
+    setIsNearByStationVisible(true);
+    if (currentLat !== null && currentLong !== null) {
+      await fetchNearbyStationData(currentLat, currentLong, setNearByLocation);
       setIsFoundNearBy(true);
-      setupNearByLocation(nearByLocation, setNearByLocation);
     }
   };
 
   const handleMarkerClick = (location) => {
     setSelectedLocation(location);
-    setCurrentViewLocaction(location);
   };
+
   const handleCallButton = (phone_number) => {
     console.log("calling number: " + phone_number);
     openPhone({
       phoneNumber: phone_number,
-      success: () => {
-        // xử lý khi gọi api thành công
-        console.log("call success");
-      },
-      fail: (error) => {
-        // xử lý khi gọi api thất bại
-        console.log("call fail");
-        console.log(error);
-      },
+      success: () => console.log("call success"),
+      fail: (error) => console.log("call fail", error),
     });
+  };
+  const handleDirectionButton = (address) => {
+    console.log("Directing...");
+    try {
+      const encodedAddress = encodeURIComponent(address);
+      window.open(
+        "https://www.google.com/maps/search/?api=1&query=" + encodedAddress
+      );
+    } catch (error) {
+      console.log(error)
+    }
+   
   };
   const containerStyle = {
     width: "100%",
@@ -232,9 +208,14 @@ const HomePage = () => {
           <GoogleMap
             mapContainerStyle={containerStyle}
             center={mapCenter}
-            zoom={9}
+            zoom={15}
           >
-            <Marker position={mapCenter} icon={customIcon}></Marker>
+            <Marker
+              position={mapCenter}
+              icon={{
+                url: "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png",
+              }}
+            />
             {nearByLocation.map((location) => (
               <Marker
                 visible={isNearByStationVisible}
@@ -244,24 +225,86 @@ const HomePage = () => {
               />
             ))}
             {selectedLocation && (
-              <InfoWindow 
-                
+              <InfoWindow
                 position={{
                   lat: selectedLocation.lat,
                   lng: selectedLocation.lng,
+                  width: 300,
                 }}
                 onCloseClick={() => setSelectedLocation(null)}
               >
-                <div style={{ width: 400, height: 100 }}>
-                  <h1>{selectedLocation.description}</h1>
-                  
+                <div
+                  style={{
+                    width: 250,
+                    padding: "0px",
+                    borderRadius: "8px",
+                    boxShadow: "0 2px 6px rgba(0, 0, 0, 1)",
+                    backgroundColor: "#fff",
+                    fontSize: "14px",
+                    lineHeight: "1.5",
+                  }}
+                >
+                  <h2
+                    style={{
+                      fontSize: "16px",
+                      margin: "0 0 10px 0",
+                      color: "#333",
+                    }}
+                  >
+                    {selectedLocation.name}
+                  </h2>
+                  <p style={{ margin: "0 0 10px 0", color: "#666" }}>
+                    {selectedLocation.description}
+                  </p>
+                  <p style={{ margin: "0 0 10px 0", color: "#666" }}>
+                    <strong>Phone:</strong> {selectedLocation.phone_number}
+                  </p>
+                  <div
+                    className="info_win_button"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      width: "205px",
+                      height: "30px",
+                    }}
+                  >
                     <button
-                      style={buttonStyle}
-                      onClick={()=>handleCallButton(selectedLocation.phone_number)}
+                      style={{
+                        textAlign: "center",
+                        width: "45%",
+                        padding: "5px",
+                        border: "none",
+                        borderRadius: "5px",
+                        backgroundColor: "#28a745",
+                        color: "#fff",
+                        fontSize: "14px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() =>
+                        handleCallButton(selectedLocation.phone_number)
+                      }
                     >
-                      call charge station
+                      Call
                     </button>
-                  
+                    <button
+                      style={{
+                        textAlign: "center",
+                        width: "45%",
+                        padding: "5px",
+                        border: "none",
+                        borderRadius: "5px",
+                        backgroundColor: "#28a745",
+                        color: "#fff",
+                        fontSize: "14px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() =>
+                        handleDirectionButton(selectedLocation.description)
+                      }
+                    >
+                      Direction
+                    </button>
+                  </div>
                 </div>
               </InfoWindow>
             )}

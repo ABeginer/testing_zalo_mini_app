@@ -16,8 +16,7 @@ const UserCard = () => {
         {userInfo.avatar}
       </Avatar>
       <Box ml={4}>
-        <Text.Title>{userInfo.name}</Text.Title>
-        <Text>{userInfo.id}</Text>
+        <Text.Title style={{padding:10}}>{userInfo.name}</Text.Title>
       </Box>
     </Box>
   );
