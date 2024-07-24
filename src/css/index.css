@@ -1,0 +1,57 @@
+ .button{
+    width: 100px;
+    height: 40px;
+    background-color:#007bff;
+    border-radius: 10px;
+    color: #f5f2f2;
+    border: none;
+    cursor: pointer;
+    margin-left: 5px;
+ }
+ 
+ .search_bar{
+    width: 220px;
+    padding: 10px;
+    border-radius:10x ;
+    border: 1px solid #ccc
+ }
+ .info_window_container{
+    width: "200px"; 
+    padding: "0px"; 
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    background-color: #fff;
+    font-size: 16px;
+    line-height: 1.5;
+ }
+ .info_window_container_header{
+    background-color: #28a745;
+    padding: 0px;
+    border-radius: 8px 8px 0 0;
+    color: #fff;
+ }
+ .info_window_container_header_text{
+    font-size: 25px;
+ }
+ .info_window_container_call_button{
+    text-Align: center;
+    width: 45%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+ }
+ .info_window_container_direction_button{
+    text-align: center;
+    width: 45%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #ffc107;  
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+ }

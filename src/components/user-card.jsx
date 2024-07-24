@@ -7,7 +7,7 @@ const UserCard = () => {
   const { userInfo } = useRecoilValue(userState);
 
   return (
-    <Box flex>
+    <Box flex style ={{background : "#a9cfe4", borderRadius: "20px"}}>
       <Avatar
         story="default"
         online
@@ -16,7 +16,7 @@ const UserCard = () => {
         {userInfo.avatar}
       </Avatar>
       <Box ml={4}>
-        <Text.Title style={{padding:10}}>{userInfo.name}</Text.Title>
+        <Text.Title style={{padding:13}}>{userInfo.name}</Text.Title>
       </Box>
     </Box>
   );

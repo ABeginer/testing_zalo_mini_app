@@ -3,6 +3,7 @@ import { List, Page, Icon, useNavigate } from "zmp-ui";
 import { openPhone } from "zmp-sdk/apis";
 import axios from "axios";
 import UserCard from "../components/user-card";
+import "../css/index.css";
 import {
   GoogleMap,
   InfoWindow,
@@ -59,12 +60,14 @@ const fetchNearbyStationData = async (
         const stationDetails = await axios.get(
           `http://172.16.11.139:14000/api/v1/locations/${station.id}`
         );
+
         return stationDetails.data;
       })
     );
     setNearByLocation(
       nearByStation.map((c, index) => ({
         id: index,
+        location_name: c.location_name,
         lat: c.latitude,
         lng: c.longitude,
         street: c.street,
@@ -81,10 +84,9 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [searchInput, setSearchInput] = useState("");
   const [mapCenter, setMapCenter] = useState({ lat: -3.745, lng: -38.523 });
-  const [buttonStyle, setButtonStyle] = useState({
-    backgroundColor: "green",
-    borderRadius: "5px",
-  });
+  const [buttonStyle, setButtonStyle] = useState({}); //the search button style
+  const [findNearbyButtonStyle, setFindNearbyButtonStyle] = useState({});
+  const [navButtonColor, setNavButtonColor] = useState("#a9cfe4");
   const [currentLat, setCurrentLat] = useState(null);
   const [currentLong, setCurrentLong] = useState(null);
   const [locations, setLocations] = useState([]);
@@ -114,7 +116,17 @@ const HomePage = () => {
   }, []);
 
   const handleSearch = async () => {
-    setIsNearByStationVisible(true);
+    setButtonStyle({ backgroundColor: navButtonColor })
+    
+    setTimeout(
+      function() {
+        setButtonStyle({})
+      }
+      .bind(this),
+      80
+  );
+    if(searchInput != ""){
+      setIsNearByStationVisible(true);
     const encodedQuery = encodeURIComponent(searchInput.trim());
     console.log(encodedQuery);
     const searchUrl =
@@ -127,18 +139,30 @@ const HomePage = () => {
         id: index,
         lat: d.latitude,
         lng: d.longitude,
+        location_name: d.location_name,
         street: d.street,
         description: d.description,
         phone_number: d.phone_number,
       }));
       console.log(searchResults);
+      console.log(searchResults);
       setNearByLocation(searchResults);
     } catch (err) {
       console.error(err);
     }
+    }
   };
 
   const handleFindNearby = async () => {
+    setFindNearbyButtonStyle({ backgroundColor: "#a9cfe4" })
+    
+    setTimeout(
+      function() {
+        setFindNearbyButtonStyle({})
+      }
+      .bind(this),
+      80
+  );
     setIsNearByStationVisible(true);
     if (currentLat !== null && currentLong !== null) {
       await fetchNearbyStationData(currentLat, currentLong, setNearByLocation);
@@ -158,6 +182,7 @@ const HomePage = () => {
       fail: (error) => console.log("call fail", error),
     });
   };
+
   const handleDirectionButton = (address) => {
     console.log("Directing...");
     try {
@@ -166,10 +191,10 @@ const HomePage = () => {
         "https://www.google.com/maps/search/?api=1&query=" + encodedAddress
       );
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-   
   };
+
   const containerStyle = {
     width: "100%",
     height: "550px",
@@ -187,19 +212,33 @@ const HomePage = () => {
           display: "flex",
           justifyContent: "space-between",
           width: "335px",
-          height: "30px",
+          height: "40px",
+          margin: "20px 0",
         }}
       >
         <input
+          className="search_bar"
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Enter location"
+          style={{
+            borderRadius: "5px",
+          }}
         />
-        <button style={buttonStyle} onClick={handleSearch}>
+        <button
+          className="button"
+          style={buttonStyle}
+          onClick={handleSearch}
+        >
           Search
         </button>
-        <button style={buttonStyle} onClick={handleFindNearby}>
+        <button
+          className="button"
+          style={findNearbyButtonStyle}
+          
+          onClick={handleFindNearby}
+        >
           Find Nearby
         </button>
       </div>
@@ -229,81 +268,62 @@ const HomePage = () => {
                 position={{
                   lat: selectedLocation.lat,
                   lng: selectedLocation.lng,
-                  width: 300,
                 }}
                 onCloseClick={() => setSelectedLocation(null)}
               >
                 <div
-                  style={{
-                    width: 250,
-                    padding: "0px",
-                    borderRadius: "8px",
-                    boxShadow: "0 2px 6px rgba(0, 0, 0, 1)",
-                    backgroundColor: "#fff",
-                    fontSize: "14px",
-                    lineHeight: "1.5",
-                  }}
+                className="info_window_container"
                 >
-                  <h2
+                  
+                  <div
+                  className="info_window_container_header"
+                    
+                  >
+                    <h2
+                      className="info_window_container_header_text"
+                    >
+                      {selectedLocation.location_name}
+                    </h2>
+                  </div>
+                  <div
                     style={{
-                      fontSize: "16px",
-                      margin: "0 0 10px 0",
+                      padding: "0px",
                       color: "#333",
                     }}
                   >
-                    {selectedLocation.name}
-                  </h2>
-                  <p style={{ margin: "0 0 10px 0", color: "#666" }}>
-                    {selectedLocation.description}
-                  </p>
-                  <p style={{ margin: "0 0 10px 0", color: "#666" }}>
-                    <strong>Phone:</strong> {selectedLocation.phone_number}
-                  </p>
-                  <div
-                    className="info_win_button"
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      width: "205px",
-                      height: "30px",
-                    }}
-                  >
-                    <button
+                    <p >
+                      {selectedLocation.description}
+                    </p>
+                    <p >
+                      <strong>Phone:</strong> {selectedLocation.phone_number}
+                    </p>
+                    <div
+                      className="info_win_button"
                       style={{
-                        textAlign: "center",
-                        width: "45%",
-                        padding: "5px",
-                        border: "none",
-                        borderRadius: "5px",
-                        backgroundColor: "#28a745",
-                        color: "#fff",
-                        fontSize: "14px",
-                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        width: "100%",
                       }}
-                      onClick={() =>
-                        handleCallButton(selectedLocation.phone_number)
-                      }
                     >
-                      Call
-                    </button>
-                    <button
-                      style={{
-                        textAlign: "center",
-                        width: "45%",
-                        padding: "5px",
-                        border: "none",
-                        borderRadius: "5px",
-                        backgroundColor: "#28a745",
-                        color: "#fff",
-                        fontSize: "14px",
-                        cursor: "pointer",
-                      }}
-                      onClick={() =>
-                        handleDirectionButton(selectedLocation.description)
-                      }
-                    >
-                      Direction
-                    </button>
+                      <button
+                      className="info_window_container_call_button"
+                        
+                        onClick={() =>
+                          handleCallButton(selectedLocation.phone_number)
+                        }
+                      >
+                        <i className="fas fa-phone"></i> Call
+                      </button>
+                      <button
+                      className="info_window_container_direction_button"
+                        
+                        onClick={() =>
+                          handleDirectionButton(selectedLocation.description)
+                        }
+                      >
+                        <i className="fas fa-directions"></i> Direction
+                      </button>
+                    </div>
                   </div>
                 </div>
               </InfoWindow>
