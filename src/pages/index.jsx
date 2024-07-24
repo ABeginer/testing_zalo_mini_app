@@ -11,8 +11,6 @@ import {
   Marker,
 } from "@react-google-maps/api";
 import ChargeStation from "../chargeStation.js";
-import { redirect } from "react-router-dom";
-
 const fetchData = async (setLocations) => {
   try {
     const res = await axios.get(
@@ -46,43 +44,12 @@ const fetchData = async (setLocations) => {
   }
 };
 
-const fetchNearbyStationData = async (
-  currentLat,
-  currentLong,
-  setNearByLocation
-) => {
-  try {
-    const res = await axios.get(
-      `http://172.16.11.139:14000/api/v1/locations/by_radius?user_lat=${currentLat}&user_long=${currentLong}&radius=1`
-    );
-    const nearByStation = await Promise.all(
-      res.data.map(async (station) => {
-        const stationDetails = await axios.get(
-          `http://172.16.11.139:14000/api/v1/locations/${station.id}`
-        );
 
-        return stationDetails.data;
-      })
-    );
-    setNearByLocation(
-      nearByStation.map((c, index) => ({
-        id: index,
-        location_name: c.location_name,
-        lat: c.latitude,
-        lng: c.longitude,
-        street: c.street,
-        description: c.description,
-        phone_number: c.phone_number,
-      }))
-    );
-  } catch (err) {
-    console.error(err);
-  }
-};
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [searchInput, setSearchInput] = useState("");
+  const [radiusInput, setRadiusInput] = useState(1);
   const [mapCenter, setMapCenter] = useState({ lat: -3.745, lng: -38.523 });
   const [buttonStyle, setButtonStyle] = useState({}); //the search button style
   const [findNearbyButtonStyle, setFindNearbyButtonStyle] = useState({});
@@ -91,10 +58,47 @@ const HomePage = () => {
   const [currentLong, setCurrentLong] = useState(null);
   const [locations, setLocations] = useState([]);
   const [nearByLocation, setNearByLocation] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [mapZoom, setMapZoom] = useState(14);
+
   const [isFoundNearBy, setIsFoundNearBy] = useState(false);
   const [isNearByStationVisible, setIsNearByStationVisible] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [isFindNearbyPressed, setIsFindNearbyPressed] = useState(false)
 
+  const fetchNearbyStationData = async (
+    currentLat,
+    currentLong,
+    setNearByLocation
+  ) => {
+      try {
+        const res = await axios.get(
+          `http://172.16.11.139:14000/api/v1/locations/by_radius?user_lat=${currentLat}&user_long=${currentLong}&radius=${radiusInput}`
+        );
+        const nearByStation = await Promise.all(
+          res.data.map(async (station) => {
+            const stationDetails = await axios.get(
+              `http://172.16.11.139:14000/api/v1/locations/${station.id}`
+            );
+    
+            return stationDetails.data;
+          })
+        );
+        setNearByLocation(
+          nearByStation.map((c, index) => ({
+            id: index,
+            location_name: c.location_name,
+            lat: c.latitude,
+            lng: c.longitude,
+            street: c.street,
+            description: c.description,
+            phone_number: c.phone_number,
+          }))
+        );
+      } catch (err) {
+        console.error(err);
+      }
+      setIsFindNearbyPressed(false);
+  };
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -116,55 +120,57 @@ const HomePage = () => {
   }, []);
 
   const handleSearch = async () => {
-    setButtonStyle({ backgroundColor: navButtonColor })
-    
-    setTimeout(
-      function() {
-        setButtonStyle({})
-      }
-      .bind(this),
-      80
-  );
-    if(searchInput != ""){
-      setIsNearByStationVisible(true);
-    const encodedQuery = encodeURIComponent(searchInput.trim());
-    console.log(encodedQuery);
-    const searchUrl =
-      "http://172.16.11.139:14000/api/v1/locations/search?query=" +
-      encodedQuery;
+    setButtonStyle({ backgroundColor: navButtonColor });
 
-    try {
-      const res = await axios.get(searchUrl);
-      const searchResults = res.data.map((d, index) => ({
-        id: index,
-        lat: d.latitude,
-        lng: d.longitude,
-        location_name: d.location_name,
-        street: d.street,
-        description: d.description,
-        phone_number: d.phone_number,
-      }));
-      console.log(searchResults);
-      console.log(searchResults);
-      setNearByLocation(searchResults);
-    } catch (err) {
-      console.error(err);
-    }
+    setTimeout(
+      function () {
+        setButtonStyle({});
+      }.bind(this),
+      80
+    );
+    if (searchInput != "") {
+      setIsNearByStationVisible(true);
+      const encodedQuery = encodeURIComponent(searchInput.trim());
+      console.log(encodedQuery);
+      const searchUrl =
+        "http://172.16.11.139:14000/api/v1/locations/search?query=" +
+        encodedQuery;
+
+      try {
+        const res = await axios.get(searchUrl);
+        const searchResults = res.data.map((d, index) => ({
+          id: index,
+          lat: d.latitude,
+          lng: d.longitude,
+          location_name: d.location_name,
+          street: d.street,
+          description: d.description,
+          phone_number: d.phone_number,
+        }));
+        console.log(searchResults);
+        console.log(searchResults);
+        setNearByLocation(searchResults);
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
   const handleFindNearby = async () => {
-    setFindNearbyButtonStyle({ backgroundColor: "#a9cfe4" })
-    
+    setFindNearbyButtonStyle({ backgroundColor: "#a9cfe4" });
+
     setTimeout(
-      function() {
-        setFindNearbyButtonStyle({})
-      }
-      .bind(this),
+      function () {
+        setFindNearbyButtonStyle({});
+      }.bind(this),
       80
-  );
+    );
+    setIsFindNearbyPressed(true);
+    setMapZoom(Number((-radiusInput+15)*1.2));
+    
     setIsNearByStationVisible(true);
     if (currentLat !== null && currentLong !== null) {
+      
       await fetchNearbyStationData(currentLat, currentLong, setNearByLocation);
       setIsFoundNearBy(true);
     }
@@ -210,33 +216,57 @@ const HomePage = () => {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
-          width: "335px",
+          //justifyContent: "space-between",
+          // width: "335px",
           height: "40px",
-          margin: "20px 0",
+          margin: "10px 0",
         }}
       >
         <input
+          visible="false"
           className="search_bar"
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Enter location"
           style={{
+            width: "250px",
             borderRadius: "5px",
           }}
         />
-        <button
-          className="button"
-          style={buttonStyle}
-          onClick={handleSearch}
-        >
+        <button className="button" style={buttonStyle} onClick={handleSearch}>
           Search
         </button>
+      </div>
+      <div>
+        <h1>-------------------------OR------------------------</h1>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          //justifyContent: "space-between",
+          width: "360px",
+          height: "40px",
+          margin: "10px 0",
+
+        }}
+      >
+        <input
+          className="search_bar"
+          type="number"
+          value={radiusInput}
+          onChange={(e) => setRadiusInput(e.target.value)}
+          placeholder="Radius (km)"
+          style={{
+            padding: "10px",
+            width: "190px",
+            borderRadius: "5px",
+          }}
+        />
+        <div style={{ textAlign: "center", padding: "10px" }}><h1>(Km)</h1></div>
         <button
           className="button"
           style={findNearbyButtonStyle}
-          
           onClick={handleFindNearby}
         >
           Find Nearby
@@ -247,7 +277,7 @@ const HomePage = () => {
           <GoogleMap
             mapContainerStyle={containerStyle}
             center={mapCenter}
-            zoom={15}
+            zoom={mapZoom}
           >
             <Marker
               position={mapCenter}
@@ -271,17 +301,9 @@ const HomePage = () => {
                 }}
                 onCloseClick={() => setSelectedLocation(null)}
               >
-                <div
-                className="info_window_container"
-                >
-                  
-                  <div
-                  className="info_window_container_header"
-                    
-                  >
-                    <h2
-                      className="info_window_container_header_text"
-                    >
+                <div className="info_window_container">
+                  <div className="info_window_container_header">
+                    <h2 className="info_window_container_header_text">
                       {selectedLocation.location_name}
                     </h2>
                   </div>
@@ -291,10 +313,8 @@ const HomePage = () => {
                       color: "#333",
                     }}
                   >
-                    <p >
-                      {selectedLocation.description}
-                    </p>
-                    <p >
+                    <p>{selectedLocation.description}</p>
+                    <p>
                       <strong>Phone:</strong> {selectedLocation.phone_number}
                     </p>
                     <div
@@ -306,8 +326,7 @@ const HomePage = () => {
                       }}
                     >
                       <button
-                      className="info_window_container_call_button"
-                        
+                        className="info_window_container_call_button"
                         onClick={() =>
                           handleCallButton(selectedLocation.phone_number)
                         }
@@ -315,8 +334,7 @@ const HomePage = () => {
                         <i className="fas fa-phone"></i> Call
                       </button>
                       <button
-                      className="info_window_container_direction_button"
-                        
+                        className="info_window_container_direction_button"
                         onClick={() =>
                           handleDirectionButton(selectedLocation.description)
                         }
