@@ -1,57 +1,24 @@
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useCallback } from "react";
 import { List, Page, Icon, useNavigate } from "zmp-ui";
 import { openPhone } from "zmp-sdk/apis";
 import axios from "axios";
 import UserCard from "../components/user-card";
+
 import "../css/index.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faLocationArrow,faMagnifyingGlass, faPhone } from '@fortawesome/free-solid-svg-icons'  
 import {
   GoogleMap,
   InfoWindow,
   LoadScript,
   Marker,
 } from "@react-google-maps/api";
-import ChargeStation from "../chargeStation.js";
-const fetchData = async (setLocations) => {
-  try {
-    const res = await axios.get(
-      "http://172.16.11.139:14000/api/v1/locations?page_size=10000"
-    );
-    const chargeStationCollection = res.data.founds.map(
-      (d) =>
-        new ChargeStation(
-          d.street,
-          d.district,
-          d.city,
-          d.city,
-          d.country,
-          d.postal_code,
-          d.latitude,
-          d.longitude,
-          d.description,
-          d.working_day_id,
-          d.pricing,
-          d.phone_number,
-          d.parking_level,
-          d.ordering,
-          d.page,
-          d.page_size,
-          d.order_by
-        )
-    );
-    setLocations(chargeStationCollection);
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-
-
 const HomePage = () => {
   const navigate = useNavigate();
   const [searchInput, setSearchInput] = useState("");
   const [radiusInput, setRadiusInput] = useState(1);
   const [mapCenter, setMapCenter] = useState({ lat: -3.745, lng: -38.523 });
-  const [buttonStyle, setButtonStyle] = useState({}); //the search button style
+  const [buttonStyle, setButtonStyle] = useState({});
   const [findNearbyButtonStyle, setFindNearbyButtonStyle] = useState({});
   const [navButtonColor, setNavButtonColor] = useState("#a9cfe4");
   const [currentLat, setCurrentLat] = useState(null);
@@ -60,26 +27,22 @@ const HomePage = () => {
   const [nearByLocation, setNearByLocation] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [mapZoom, setMapZoom] = useState(14);
-
   const [isFoundNearBy, setIsFoundNearBy] = useState(false);
   const [isNearByStationVisible, setIsNearByStationVisible] = useState(true);
-  const [isFindNearbyPressed, setIsFindNearbyPressed] = useState(false)
+  const [isFindNearbyPressed, setIsFindNearbyPressed] = useState(false);
 
-  const fetchNearbyStationData = async (
-    currentLat,
-    currentLong,
-    setNearByLocation
-  ) => {
+  const fetchNearbyStationData = useCallback(
+    async (lat, long) => {
       try {
         const res = await axios.get(
-          `http://172.16.11.139:14000/api/v1/locations/by_radius?user_lat=${currentLat}&user_long=${currentLong}&radius=${radiusInput}`
+          `http://172.16.11.139:14000/api/v1/locations/by_radius?user_lat=${lat}&user_long=${long}&radius=${radiusInput}`
         );
         const nearByStation = await Promise.all(
           res.data.map(async (station) => {
             const stationDetails = await axios.get(
               `http://172.16.11.139:14000/api/v1/locations/${station.id}`
             );
-    
+
             return stationDetails.data;
           })
         );
@@ -98,7 +61,10 @@ const HomePage = () => {
         console.error(err);
       }
       setIsFindNearbyPressed(false);
-  };
+    },
+    [radiusInput]
+  );
+
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -115,26 +81,37 @@ const HomePage = () => {
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
-
-    fetchData(setLocations);
   }, []);
+
+  function openCity(evt, cityName) {
+    // Declare all variables
+    var i, tabcontent, tablinks;
+
+    // Get all elements with class="tabcontent" and hide them
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
+    }
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(cityName).style.display = "block";
+    evt.currentTarget.className += " active";
+  }
 
   const handleSearch = async () => {
     setButtonStyle({ backgroundColor: navButtonColor });
+    setTimeout(() => setButtonStyle({}), 80);
 
-    setTimeout(
-      function () {
-        setButtonStyle({});
-      }.bind(this),
-      80
-    );
-    if (searchInput != "") {
+    if (searchInput.trim() !== "") {
       setIsNearByStationVisible(true);
       const encodedQuery = encodeURIComponent(searchInput.trim());
-      console.log(encodedQuery);
-      const searchUrl =
-        "http://172.16.11.139:14000/api/v1/locations/search?query=" +
-        encodedQuery;
+      const searchUrl = `http://172.16.11.139:14000/api/v1/locations/search?query=${encodedQuery}`;
 
       try {
         const res = await axios.get(searchUrl);
@@ -147,32 +124,36 @@ const HomePage = () => {
           description: d.description,
           phone_number: d.phone_number,
         }));
-        console.log(searchResults);
-        console.log(searchResults);
-        setNearByLocation(searchResults);
+        if (searchResults.length > 0) {
+          setNearByLocation(searchResults);
+        } else {
+          alert("Cannot find any place that fits your search");
+        }
       } catch (err) {
         console.error(err);
       }
+    } else {
+      alert("Please enter your destination");
     }
   };
 
   const handleFindNearby = async () => {
     setFindNearbyButtonStyle({ backgroundColor: "#a9cfe4" });
+    setTimeout(() => setFindNearbyButtonStyle({}), 80);
 
-    setTimeout(
-      function () {
-        setFindNearbyButtonStyle({});
-      }.bind(this),
-      80
-    );
-    setIsFindNearbyPressed(true);
-    setMapZoom(Number((-radiusInput+15)*1.2));
-    
-    setIsNearByStationVisible(true);
-    if (currentLat !== null && currentLong !== null) {
-      
-      await fetchNearbyStationData(currentLat, currentLong, setNearByLocation);
-      setIsFoundNearBy(true);
+    const radius = Number(radiusInput);
+    if (radius > 0) {
+      setMapCenter({ lat: currentLat, lng: currentLong });
+
+      setMapZoom(15 - radius * 0.5);
+      setIsNearByStationVisible(true);
+
+      if (currentLat !== null && currentLong !== null) {
+        await fetchNearbyStationData(currentLat, currentLong);
+        setIsFoundNearBy(true);
+      }
+    } else {
+      alert("Invalid Radius value. Please enter another number");
     }
   };
 
@@ -181,24 +162,18 @@ const HomePage = () => {
   };
 
   const handleCallButton = (phone_number) => {
-    console.log("calling number: " + phone_number);
     openPhone({
       phoneNumber: phone_number,
-      success: () => console.log("call success"),
-      fail: (error) => console.log("call fail", error),
+      success: () => console.log("Call success"),
+      fail: (error) => console.log("Call fail", error),
     });
   };
 
   const handleDirectionButton = (address) => {
-    console.log("Directing...");
-    try {
-      const encodedAddress = encodeURIComponent(address);
-      window.open(
-        "https://www.google.com/maps/search/?api=1&query=" + encodedAddress
-      );
-    } catch (error) {
-      console.log(error);
-    }
+    const encodedAddress = encodeURIComponent(address);
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`
+    );
   };
 
   const containerStyle = {
@@ -207,70 +182,66 @@ const HomePage = () => {
   };
 
   return (
-    <Page className="page">
+    <Page className="page" >
+      
       <Suspense>
-        <div className="section-container" onClick={() => navigate("/user")}>
+        <div className="section-container" onClick={() => navigate("/user")} style={{backgroundColor: "none"}}>
           <UserCard />
         </div>
       </Suspense>
-      <div
-        style={{
-          display: "flex",
-          //justifyContent: "space-between",
-          // width: "335px",
-          height: "40px",
-          margin: "10px 0",
-        }}
-      >
-        <input
-          visible="false"
-          className="search_bar"
-          type="text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Enter location"
-          style={{
-            width: "250px",
-            borderRadius: "5px",
-          }}
-        />
-        <button className="button" style={buttonStyle} onClick={handleSearch}>
+
+
+
+      <div className="tab">
+      
+        <button
+          className="tablinks"
+          onClick={(event) => openCity(event, "London")}
+        >
           Search
         </button>
-      </div>
-      <div>
-        <h1>-------------------------OR------------------------</h1>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          //justifyContent: "space-between",
-          width: "360px",
-          height: "40px",
-          margin: "10px 0",
-
-        }}
-      >
-        <input
-          className="search_bar"
-          type="number"
-          value={radiusInput}
-          onChange={(e) => setRadiusInput(e.target.value)}
-          placeholder="Radius (km)"
-          style={{
-            padding: "10px",
-            width: "190px",
-            borderRadius: "5px",
-          }}
-        />
-        <div style={{ textAlign: "center", padding: "10px" }}><h1>(Km)</h1></div>
         <button
-          className="button"
-          style={findNearbyButtonStyle}
-          onClick={handleFindNearby}
+          className="tablinks"
+          onClick={(event) => openCity(event, "Paris")}
         >
-          Find Nearby
+          Find nearby station
         </button>
+      </div>
+      <div id="London" className="tabcontent">
+        <div className="search_container">
+          <input
+            className="search_bar"
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Enter location"
+          />
+          <button className="button" style={buttonStyle} onClick={handleSearch}>
+          <FontAwesomeIcon icon={faMagnifyingGlass} /> 
+
+          </button>
+        </div>
+      </div>
+
+      <div id="Paris" className="tabcontent">
+        <div className="find_nearby_container">
+          <input
+            className="find_nearby_radius_input"
+            type="number"
+            min="0.1"
+            value={radiusInput}
+            onChange={(e) => setRadiusInput(e.target.value)}
+          />
+          <span className="find_nearby_radius_unit">Km</span>
+          <button
+            className="button"
+            style={findNearbyButtonStyle}
+            onClick={handleFindNearby}
+          >
+          <FontAwesomeIcon icon={faMagnifyingGlass} /> 
+
+          </button>
+        </div>
       </div>
       <div>
         <LoadScript googleMapsApiKey={process.env.REACT_APP_API_KEY}>
@@ -282,7 +253,7 @@ const HomePage = () => {
             <Marker
               position={mapCenter}
               icon={{
-                url: "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png",
+                url: "http://maps.google.com/mapfiles/ms/micons/man.png",
               }}
             />
             {nearByLocation.map((location) => (
@@ -294,7 +265,7 @@ const HomePage = () => {
               />
             ))}
             {selectedLocation && (
-              <InfoWindow
+              <InfoWindow 
                 position={{
                   lat: selectedLocation.lat,
                   lng: selectedLocation.lng,
@@ -307,31 +278,19 @@ const HomePage = () => {
                       {selectedLocation.location_name}
                     </h2>
                   </div>
-                  <div
-                    style={{
-                      padding: "0px",
-                      color: "#333",
-                    }}
-                  >
+                  <div className="info_window_container_body">
                     <p>{selectedLocation.description}</p>
                     <p>
                       <strong>Phone:</strong> {selectedLocation.phone_number}
                     </p>
-                    <div
-                      className="info_win_button"
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        width: "100%",
-                      }}
-                    >
+                    <div className="info_window_container_all_buttons">
                       <button
                         className="info_window_container_call_button"
                         onClick={() =>
                           handleCallButton(selectedLocation.phone_number)
                         }
                       >
-                        <i className="fas fa-phone"></i> Call
+                        <i className="fas fa-phone"></i> <FontAwesomeIcon icon={faPhone} size="2x" />
                       </button>
                       <button
                         className="info_window_container_direction_button"
@@ -339,7 +298,7 @@ const HomePage = () => {
                           handleDirectionButton(selectedLocation.description)
                         }
                       >
-                        <i className="fas fa-directions"></i> Direction
+                        <i className="fas fa-directions"></i>  <FontAwesomeIcon icon={faLocationArrow} size="2x" />
                       </button>
                     </div>
                   </div>
