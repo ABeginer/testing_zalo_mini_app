@@ -1,9 +1,86 @@
+.page {
+  background-image: url("https://static.vecteezy.com/system/resources/previews/005/091/147/original/high-resolution-map-of-the-world-high-detail-grey-world-map-free-vector.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100vw;
+  height: 100vh;
+  padding: 3px;
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-89%);
+    opacity: 1;
+  }
+}
+.slide-in{
+  animation: slideIn 0.5s ease-out;
+
+}
+.slide-out{
+  animation: slideOut 0.5s ease-out;
+
+}
+.option-menu-button{
+  height: 70px;
+  width: 0px;
+  display: flex; 
+  border-radius: 20px;
+  opacity: 0.9;
+  
+}
+.menu{
+  margin-left: 5px;
+  width:  420px;
+  height: 100px;
+  display: flex;
+
+  /* animation: slideIn 1s ease-out; */
+}
+.menu-close-button{
+  right: 300px;
+  background-color: #cb0b0b;
+  color: #f5f2f2;
+  border-radius: 10px;
+  width: 50px;
+  height: 80px;
+  margin: auto;
+}
+.menu-open-button{
+  opacity: 0.9;
+  background-color: #6368b1;
+  color: #f5f2f2;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  width: 50px;
+  height: 80px;
+  margin-bottom: 10px;
+  margin-left: 10px;
+  padding-top: -10px;
+}
 .tab {
+
+  animation: fadeIn 0.3s ease-in-out;
   overflow: hidden;
-  border: 1px solid #ccc;
-  width: 280px;
-  border-radius: 50px;
-  background-color: #a9cfe4;
+  margin-left: 0px;
+  padding-bottom: 5px;
+  width: 330px;
+
+ 
 }
 
 /* Style the buttons that are used to open the tab content */
@@ -13,70 +90,113 @@
   border: none;
   outline: none;
   cursor: pointer;
-  padding: 14px 16px;
-  transition: 0.3s;
-}
+  padding: 14px 30px;
+  color: #f5f2f2;
+  font-weight: 700;
+  background-color: #829ba9;
 
-/* Change background color of buttons on hover */
+  border-radius: 0px;
+  transition: 0.6s;
+}
 .tab button:hover {
   background-color: #ddd;
 }
 
 /* Create an active/current tablink class */
 .tab button.active {
-  background-color: #1a83ff;
+  background-color: #000000;
 }
 
 /* Style the tab content */
 .tabcontent {
+  grid-column: 2;
+
   display: none;
-  padding: 6px 12px;
-  border: 1px solid #ccc;
+  padding: 0px;
   border-top: none;
 }
+.menu-container {
+  /* display: grid; */
+  animation: fadeIn 0.3s ease-in-out;
 
-.button {
-  width: 100px;
+  grid-template-columns: 1fr 1fr 1fr;
+  width: 325px;
+  padding-bottom: 5px;
+}
+.option-button {
+
+  float: left;
+  width: 40px;
   height: 40px;
-  background-color: #1a83ff;
-  border-radius: 100px;
+  background-color: #01050a;
+  border-radius: 5px;
   color: #f5f2f2;
   border: none;
   cursor: pointer;
-  margin-left: 5px;
+  margin: auto;
+  margin-right: 10px;
 }
-.search_container {
-  display: flex;
-  width: 330px;
+
+.button {
+  width: 50px;
   height: 40px;
-  margin: 10px 0;
+  background-color: #01050a;
+  border-radius: 5px;
+  color: #f5f2f2;
+  border: none;
+  cursor: pointer;
+  margin-left: -40px;
+}
+
+.search_container {
+  animation: fadeIn 0.3s ease-in-out;
+
+  display: flex;
+  width: 350px;
+  height: 40px;
+  margin: 0px 0;
 }
 .search_bar {
-  width: 250px;
+  width: 310px;
+  background-color: #d3dce2;
   padding: 10px;
-  border-radius: 100px;
-  border: 1px solid #ccc;
+  border: 2px solid #01050a;
+  border-radius: 5px;
 }
 .find_nearby_container {
+  animation: fadeIn 0.3s ease-in-out;
+
   display: flex;
-  width: 330px;
+  width: 350px;
+  border-radius: 5px;
+
   height: 40px;
-  margin: 10px 0;
 }
 .find_nearby_radius_input {
-  width: 220px;
   padding: 10px;
-  border-radius: 10x;
-  border: 1px solid #ccc;
-  padding: 10px;
-  width: 245px;
-  border-radius: 100px;
+  background-color: #d3dce2;
+  border-radius: 5px;
+  border: 2px solid #01050a;
+
+  padding: 13px;
+  width: 305px;
+  border-radius: 5px;
 }
 .find_nearby_radius_unit {
-  margin-left: -50px;
-  padding: 10px;
-  width: 50px;
+  margin-left: -80px;
+  padding: 8px;
+  width: 30px;
   color: #7cabbb;
+}
+.find-nearby-button {
+  width: 50px;
+  height: 40px;
+  background-color: #01050a;
+  border-radius: 3px;
+  color: #f5f2f2;
+  border: none;
+  cursor: pointer;
+  margin-left: 13px;
 }
 .info_window_container {
   width: "100%";

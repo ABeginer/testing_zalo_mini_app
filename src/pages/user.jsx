@@ -23,6 +23,7 @@ const UserPage = () => {
         flexDirection="column"
         justifyContent="center"
         alignItems="center"
+        style={{backgroundColor: "#d3dce2",borderRadius: "20px"}}
       >
         <Box>
           <Avatar
@@ -34,8 +35,8 @@ const UserPage = () => {
             {user.avatar}
           </Avatar>
         </Box>
-        <Box flex flexDirection="row" alignItems="center" ml={8}>
-          <Box>
+        <Box flex flexDirection="row" alignItems="center" ml={8} >
+          <Box style={{backgroundColor: "#d3dce2",borderRadius: "0px"}}>
             <Text.Title>{displayName || user.name}</Text.Title>
           </Box>
           <Box ml={4}>
@@ -49,12 +50,12 @@ const UserPage = () => {
           </Box>
         </Box>
       </Box>
-      <Box m={0} p={0} mt={4}>
-        <div className="section-container">
-          <List>
+      <Box m={0} p={0} mt={4} >
+        <div className="section-container" style={{backgroundColor: "#d3dce2",borderRadius: "20px", border: "2px solid #01050a"}}>
+          <List >
             <List.Item title="Name" subTitle={user.name} />
-            <List.Item title="Display Name" subTitle={displayName} />
-            <List.Item title="ID" subTitle={user.id} />
+            <List.Item title="Display Name" subTitle={displayName}   />
+            <List.Item title="ID" subTitle={user.id}/>
           </List>
         </div>
       </Box>
