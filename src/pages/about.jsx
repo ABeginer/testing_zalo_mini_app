@@ -209,25 +209,26 @@ const HomePage = () => {
        <div style={{ width: "380px", height: "100px", display: "flex" }}>
         {isOptionMenuVisible && (
           <div className="option-menu-button">
+            <h1 style={{fontSize: "2em", margin: "auto", fontWeight: "bold", fontStyle: "-moz-initial"}}>Charger Navigator </h1>
             <div style={{ margin: "auto", marginTop: "0px" }}>
-              {!isTabVisible && (
+              {/* {!isTabVisible && ( */}
                 <button
                   className="menu-open-button"
                   onClick={toggleMenuVisibility}
                 >
                   <FontAwesomeIcon icon={faMagnifyingGlass} size="2x" />
                 </button>
-              )}
+              {/* )} */}
             </div>
             <div style={{ margin: "auto", marginTop: "0px" }}>
-              {!isUserInfoVisible && (
+              {/* {!isUserInfoVisible && ( */}
                 <button
                   className="menu-open-button"
                   onClick={toggleUserInfoVisibility}
                 >
                   <FontAwesomeIcon icon={faUser} size="2x" />
                 </button>
-              )}
+              {/* )} */}
             </div>
           </div>
         )}
@@ -343,8 +344,8 @@ const HomePage = () => {
           </div>
         )}
       </div> 
-
-      <div>
+      <div className="wrapper" style={{position: "relative"}}>
+       <div>
         <LoadScript googleMapsApiKey={process.env.REACT_APP_API_KEY}>
           <GoogleMap
             mapContainerStyle={{ width: "100%", height: "550px" }}
@@ -412,7 +413,12 @@ const HomePage = () => {
             )}
           </GoogleMap>
         </LoadScript>
+      </div> 
+      <div className="over-map" style={{position: "absolute", top: "10px", left: "10px", zIndex: "99",margin: "auto"}}>
+        <h1>this is sth</h1>
       </div>
+      </div>
+      
     </Page>
   );
 };
