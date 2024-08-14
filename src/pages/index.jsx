@@ -24,7 +24,7 @@ const AboutPage = (props) => {
     <div className = "whole-welcome-page">
       <div className="welcome-page">
     <div className="image-container">
-        <img  src="https://static.vecteezy.com/system/resources/previews/019/551/284/original/electric-vehicle-charging-station-icon-in-gradient-colors-png.png" style={{height: "35vh",width: "35vh", margin: "auto"}} />
+        <img  src="https://static.vecteezy.com/system/resources/previews/019/551/284/original/electric-vehicle-charging-station-icon-in-gradient-colors-png.png" style={{height: "25vh",width: "25vh", margin: "auto"}} />
     </div>
     <div className="content-container">
         <h1>EV charger</h1>

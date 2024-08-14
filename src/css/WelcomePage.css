@@ -17,7 +17,6 @@
     border-top: 8px solid #3498db; /* Blue */
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    background-color: hsl(240, 2%, 18%);
 }
 
 @keyframes spin {
@@ -28,18 +27,15 @@
 .welcome-page {
     margin-top: auto;
     margin: auto;
-    opacity: 0.9;
     padding: 10px;
     justify-content: center;
     align-items: center;
-    background-color: #2c2c2e; /* Dark background color */
     color: #00d4ff; /* Light teal text color */
     width: 90%;
     height: 95vh;
     max-width: 400px;
     border-radius: 15px;
     overflow: hidden;
-    box-shadow: 0 80px 800px rgba(0, 0, 0, 1); /* Optional shadow for better visibility */
 }
 
 .image-container {
@@ -49,8 +45,8 @@
     border-bottom-left-radius: 50px; /* Rounded bottom left corner */
 }
 .image-icon {
-    height: 30vh;
-    width: 30vh;
+    height: 20vh;
+    width: 20vh;
     margin: auto;
 }
 .image-container img {
