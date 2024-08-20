@@ -1,0 +1,131 @@
+.left-slide-pane {
+    position: absolute;
+    width: 70%;
+    height: 100vh;
+    top: 0%;
+    left: 0%;
+    z-index: 99;
+    margin: auto;
+    font-weight: 600;
+    display: flex;
+  }
+  
+  .left-slide-pane-overlay {
+    position: absolute;
+    width: 70%;
+  
+    display: flex;
+  
+    height: 100vh;
+    top: 0%;
+    left: 0%;
+    z-index: 99;
+    margin: auto;
+    font-weight: 600;
+  }
+  .bottom-slide-pane {
+    position: absolute;
+    width: 110%;
+    height: 50vh;
+  
+    z-index: 99;
+    margin: auto;
+    font-weight: 600;
+    display: flex;
+  }
+  .bottom-slide-pane-overlay {
+    position: absolute;
+    width: 110%;
+  
+    height: 50vh;
+    top: 50%;
+    left: 5%;
+    z-index: 99;
+    margin: auto;
+    font-weight: 600;
+    display: flex;
+  }
+  .right-slide-pane {
+    position: absolute;
+    width: 100%;
+    height: 75vh;
+    top: 0%;
+    left: 0%;
+    z-index: 99;
+    margin: auto;
+    display: flex;
+  
+  }
+  
+  .right-slide-pane-overlay {
+    position: absolute;
+    width: 100%;
+    height: 75vh;
+    top: 20%;
+    left: 0%;
+    z-index: 99;
+    margin: auto;
+    display: flex;
+  
+  }
+  
+  .right-slide-pane-header {
+    position: absolute;
+    border-radius: 10px;
+    width: 125%;
+    height: 10vh;
+    background-color: #54facf;
+    font-family: "Poppins", sans-serif;
+  
+  }
+  .right-slide-pane-content {
+    position: absolute;
+    border-radius: 10px;
+  
+    width: 125%;
+    height: 80vh;
+    background-color: #262930;  
+    overflow-y: scroll; /* allows vertical scrolling */
+    overflow-x: hidden;
+    font-family: "Poppins", sans-serif;
+  
+  
+  }
+  .right-slide-pane-content::-webkit-scrollbar {
+    width: 1px; /* Reduce scrollbar width */
+  }
+  .right-slide-pane-button-container{
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    height: 10%;
+    width: 100%; 
+    top: 20%;
+    
+    
+  
+  }
+  .right-slide-pane-close-button{
+    position: absolute;
+    color: #dbd7d7;
+    z-index: 99;
+    border-radius: 5px;
+    top: 1%;
+    left: 90%;
+    width: 30px;
+    height: 30px;
+    background-color: #c21010;
+  }
+  .right-slide-pane-img{
+    width: 100%;
+    height: 15vh;
+  
+  }.list-icon-container {
+    height: 90px;
+    width: 10%;
+  }
+  .list-icon-container-icon {
+    margin: auto;
+    color: #54facf;
+    margin-top: 50%;
+  }

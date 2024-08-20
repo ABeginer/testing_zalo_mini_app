@@ -34,11 +34,16 @@ import {
 import {
   GoogleMap,
   InfoWindow,
+  InfoBox,
   LoadScript,
   Marker,
 } from "@react-google-maps/api";
 import "../css/index.css";
-import { number } from "prop-types";
+import "../css/google-map.css";
+import "../css/sliding-pane.css";
+import "../css/info-window.css";
+import "../css/search-container.css";
+import { stringify } from "postcss";
 
 const HomePage = () => {
   const { userInfo } = useRecoilValue(userState);
@@ -46,7 +51,6 @@ const HomePage = () => {
 
   const [value, setValue] = useState(33);
   const numbers = Array.from({ length: 100 }, (_, i) => i + 1); // Numbers from 1 to 100
-  const divRef = useRef(null);
   const handleScroll = (e) => {
     const { scrollTop } = e.target;
     const itemHeight = 40; // Height of each item
@@ -64,19 +68,17 @@ const HomePage = () => {
   const [currentLong, setCurrentLong] = useState(null);
   const [nearByLocation, setNearByLocation] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
   const [mapZoom, setMapZoom] = useState(14);
-  
-  const [state, setState] = useState({isUserInfoOpen : false, isSearchOpen: true, isSelectedLocationOpen: false} ) 
 
-  const [isSearchMenuVisible, setIsSearchMenuVisible] = useState(true);
-  const [isTabVisible, setIsTabVisible] = useState(false);
-  const [isMenuVisible, setIsMenuVisible] = useState(true);
-  const [isUserInfoVisible, setIsUserInfoVisible] = useState(false);
-  const [isOptionMenuVisible, setIsOptionMenuVisible] = useState(true);
+  const [state, setState] = useState({
+    isUserInfoOpen: false,
+    isSearchOpen: true,
+    isSelectedLocationOpen: false,
+  });
+
   const [isScrollBarVisible, setIsScrollBarVisible] = useState(false);
-  const [isUserMenuVisible, setIsUserMenuVisible] = useState(false);
-  const [isUserInfoAnimationVisible, setIsUserInfoAnimatonVisible] =
-    useState(false);
+
   useEffect(() => {
     getLocation({
       success: async (data) => {
@@ -103,7 +105,7 @@ const HomePage = () => {
     async (lat, long) => {
       try {
         const response = await axios.get(
-          `http://172.16.11.139:14000/api/v1/locations/by_radius`,
+          `http://172.16.11.139:14000/api/v1/locations/by_radius`, //api call to get all charge station by radius
           {
             params: { user_lat: lat, user_long: long, radius: radiusInput },
           }
@@ -111,8 +113,10 @@ const HomePage = () => {
         const nearByStation = await Promise.all(
           response.data.map(async (station) => {
             const stationDetails = await axios.get(
-              `http://172.16.11.139:14000/api/v1/locations/${station.id}`
+              `http://172.16.11.139:14000/api/v1/locations/${station.id}` //retrieve detail infomation with get location by id
             );
+            console.log(nearByLocation);
+
             return {
               ...stationDetails.data,
               lat: stationDetails.data.latitude,
@@ -125,6 +129,7 @@ const HomePage = () => {
             `seem like there is no charge station within radius of ${radiusInput} km near you\nPlease find again with a larger radius`
           );
         }
+
         setNearByLocation(nearByStation);
       } catch (err) {
         alert(
@@ -155,10 +160,14 @@ const HomePage = () => {
           lng: d.longitude,
           location_name: d.location_name,
           street: d.street,
+          img: d.img_url,
           description: d.description,
           phone_number: d.phone_number,
+          parking_level: d.parking_level,
+          pricing: d.pricing,
+          status: d.status
         }));
-
+        console.log(res.data);
         if (searchResults.length > 0) {
           setNearByLocation(searchResults);
         } else {
@@ -175,7 +184,10 @@ const HomePage = () => {
     }
     setMapCenter({ lat: currentLat, lng: currentLong });
   };
-
+  const handleMoreInfoButton = () => {
+     setState({isSelectedLocationOpen: true})
+     
+  }
   const handleFindNearby = async () => {
     setFindNearbyButtonStyle({ backgroundColor: "#a9cfe4" });
     setIsScrollBarVisible(false);
@@ -188,12 +200,14 @@ const HomePage = () => {
       alert("Invalid Radius value. Please enter another number");
     }
   };
-
+  //set selected location to open the option window
   const handleMarkerClick = (location) => {
-    // setMapCenter({ lat: location.lat + 0.009, lng: location.lng  });
+
+    setMapCenter({ lat: location.lat, lng: location.lng });
+    console.log(location.img + "2")
     setSelectedLocation(location);
   };
-
+  //call zalo defaut api to perform a call to the station number
   const handleCallButton = (phoneNumber) => {
     openPhone({
       phoneNumber,
@@ -202,58 +216,12 @@ const HomePage = () => {
     });
   };
 
+  //redirect to gg map for direction
   const handleDirectionButton = (address) => {
     const encodedAddress = encodeURIComponent(address);
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`
     );
-  };
-  const handleSlideButton = () => {
-
-    setIsSearchMenuVisible(false);
-    
-
-  };
-  const toggleMenuVisibility = () => {
-    if (isTabVisible) {
-      setIsMenuVisible(true);
-      setTimeout(() => setIsTabVisible(false), 500);
-      setTimeout(() => setIsOptionMenuVisible(true), 500);
-    } else {
-      setIsMenuVisible(false);
-      setIsTabVisible(true);
-      setIsOptionMenuVisible(false);
-    }
-  };
-  const toggleUserInfoVisibility = () => {
-    if (isUserInfoVisible) {
-      setIsUserInfoAnimatonVisible(true);
-      setTimeout(() => setIsUserInfoVisible(false), 500);
-      setTimeout(() => setIsOptionMenuVisible(true), 500);
-    } else {
-      setIsUserInfoAnimatonVisible(false);
-      setIsUserInfoVisible(true);
-      setIsOptionMenuVisible(false);
-    }
-  };
-  const handleOpenSearchMenu = () => {
-    setIsSearchMenuVisible(true)
-
-   }
-  
-  const openSearchOption = (evt, tabName) => {
-    const tabcontent = document.getElementsByClassName("tabcontent");
-    for (let i = 0; i < tabcontent.length; i++) {
-      tabcontent[i].style.display = "none";
-    }
-
-    const tablinks = document.getElementsByClassName("tablinks");
-    for (let i = 0; i < tablinks.length; i++) {
-      tablinks[i].className = tablinks[i].className.replace(" active", "");
-    }
-
-    document.getElementById(tabName).style.display = "block";
-    evt.currentTarget.className += " active";
   };
 
   return (
@@ -275,65 +243,145 @@ const HomePage = () => {
               {nearByLocation.map((location) => (
                 <Marker
                   key={location.id}
-                  description="this is the desciption" //TESTING MARKER DESCIPTION
                   position={{ lat: location.lat, lng: location.lng }}
                   onClick={() => handleMarkerClick(location)}
+                  label={{
+                    text: location.location_name, // Add your description here
+                    marginTop: "10%",
+                    color: "white",
+                    fontSize: "12px",
+                    fontWeight: "200",
+                  }}
                 />
               ))}
               {selectedLocation && (
-                <InfoWindow
-                  className="info"
+                <InfoBox className="info"
                   position={{
                     lat: selectedLocation.lat,
                     lng: selectedLocation.lng,
                   }}
+                  
                   onCloseClick={() => setSelectedLocation(null)}
                 >
                   <div className="info_window_container">
                     <div className="info_window_container_header">
-                      <h2 className="info_window_container_header_text">
+                      <p className="info_window_container_header_text">
                         {selectedLocation.location_name}
-                      </h2>
-                    </div>
-                    <div className="info_window_container_body">
-                      <p>{selectedLocation.description}</p>
-                      <p>
-                        <strong>Phone:</strong> {selectedLocation.phone_number}
                       </p>
-                      <div className="info_window_container_all_buttons">
-                        <button
-                          className="info_window_container_call_button"
-                          onClick={() =>
-                            handleCallButton(selectedLocation.phone_number)
-                          }
-                        >
-                          <FontAwesomeIcon icon={faPhone} size="2x" />
-                        </button>
-                        <button
-                          className="info_window_container_direction_button"
-                          onClick={() =>
-                            handleDirectionButton(
-                              selectedLocation.location_name
-                            )
-                          }
-                        >
-                          <FontAwesomeIcon icon={faLocationArrow} size="2x" />
-                        </button>
-                      </div>
                     </div>
+                    <p className="info_window_container_body_text" >
+                      {selectedLocation.description}
+                    </p>
+                    <button className="info-window-button" onClick={handleMoreInfoButton}>more info...</button>
                   </div>
-                </InfoWindow>
+                </InfoBox>
               )}
             </GoogleMap>
           </LoadScript>
         </div>
 
-        {isSearchMenuVisible ? (
-          <div
-            className={`over-map-container-collection ${
-              isSearchMenuVisible ? "slide-out" : "slide-in"
-            }`}
-          >
+        {!state.isUserInfoOpen && (
+          <div className="avatar-container">
+            <Avatar
+              style={{ display: "flex", marginLeft: "0px", margin: "auto" }}
+              onClick={() => setState({ isUserInfoOpen: true })}
+              story="default"
+              online
+              src={
+                userInfo.avatar.startsWith("http") ? userInfo.avatar : undefined
+              }
+            >
+              {userInfo.avatar}
+            </Avatar>
+          </div>
+        )}
+
+        {/* the left sliding pane is contain of the user setting and exit button */}
+        <SlidingPane
+          className={`left-slide-pane ${
+            state.isUserInfoOpen ? "slide-right" : "slide-left"
+          }`}
+          overlayClassName="left-slide-pane-overlay"
+          isOpen={state.isUserInfoOpen}
+          from="left"
+          onRequestClose={() => {
+            setState({ isUserInfoOpen: false });
+          }}
+        >
+          <div className="over-map-user-info-container">
+            <div className="over-map-user-info">
+              <UserCard></UserCard>
+              <div className="over-map-container-button-container">
+                <button className="over-map-button">
+                  <p
+                    style={{ margin: "auto", color: "#54facf" }}
+                    onClick={() => {
+                      navigate("/user");
+                    }}
+                  >
+                    Setting
+                  </p>
+
+                  <FontAwesomeIcon icon={faGear} style={{ margin: "auto" }} />
+                </button>
+                <button className="over-map-button">
+                  <p
+                    style={{ margin: "auto", color: "#54facf" }}
+                    onClick={() => {
+                      navigate("/");
+                    }}
+                  >
+                    Exit
+                  </p>
+                  <FontAwesomeIcon
+                    icon={faRightFromBracket}
+                    style={{ margin: "auto" }}
+                  />
+                </button>
+              </div>
+            </div>
+            <div className="over-map-info-slide-button-container">
+              <button
+                className="over-map-info-slide-button"
+                onClick={() => setState({ isUserInfoOpen: false })}
+              >
+                <FontAwesomeIcon
+                  className="slide-button-icon"
+                  icon={faCaretLeft}
+                  size="2x"
+                />
+              </button>
+            </div>
+          </div>
+        </SlidingPane>
+
+        {!state.isSearchOpen && (
+          <div className="over-map-slide-up-button-container">
+            <button
+              className="over-map-slide-up-button"
+              onClick={() => setState({ isSearchOpen: true })}
+            >
+              {" "}
+              <FontAwesomeIcon
+                className="slide-button-icon"
+                icon={faMagnifyingGlass}
+                size="2x"
+              />
+            </button>
+          </div>
+        )}
+
+        <SlidingPane
+          className={`bottom-slide-pane ${
+            state.isSearchOpen ? "slide-out" : "slide-in "
+          }`}
+          overlayClassName="bottom-slide-pane-overlay"
+          isOpen={state.isSearchOpen}
+          onRequestClose={() => {
+            setState({ isSearchOpen: false });
+          }}
+        >
+          <div className="over-map-container-collection">
             {isScrollBarVisible && (
               <div className="picker-container" onScroll={handleScroll}>
                 <div className="number-picker">
@@ -343,6 +391,7 @@ const HomePage = () => {
                       className={`picker-item ${
                         num === radiusInput ? "active" : ""
                       }`}
+                      onClick={() => setIsScrollBarVisible(false)}
                     >
                       {num}
                     </div>
@@ -357,7 +406,7 @@ const HomePage = () => {
                   className="slide-button-icon"
                   icon={faCaretDown}
                   size="2x"
-                  onClick={handleSlideButton}
+                  onClick={() => setState({ isUserInfoOpen: false })}
                 />
               </button>
             </div>
@@ -367,14 +416,14 @@ const HomePage = () => {
                   icon={faChargingStation}
                   size="2x"
                   color="#262930"
-                  style={{ marginLeft: "10px",margin: "auto" }}
+                  style={{ marginLeft: "10px", margin: "auto" }}
                 />
                 <p
                   style={{
                     margin: "auto",
                     fontSize: "1.3em",
                     fontStyle: "poppins",
-                    color: "#262930"
+                    color: "#262930",
                   }}
                 >
                   EV charge station
@@ -405,7 +454,7 @@ const HomePage = () => {
                   <FontAwesomeIcon icon={faMagnifyingGlass} />
                 </LongPressButton>
               </div>
-              <ul style={{ margin: "auto", width: "300px" }}>
+              <ul style={{ margin: "auto", width: "100%" }}>
                 {nearByLocation.map((location) => (
                   <li key={location.id} className="list-item">
                     <div className="list-info-container">
@@ -429,78 +478,65 @@ const HomePage = () => {
               </ul>
             </div>
           </div>
-        ) : (
-          <div className="over-map-slide-up-button-container">
-            <button
-              className="over-map-slide-up-button"
-              onClick={handleOpenSearchMenu}
-            >
-              {" "}
-              <FontAwesomeIcon
-                className="slide-button-icon"
-                icon={faCaretUp}
-                size="2x"
-              />
-            </button>
-          </div>
-        )}
-        {isUserMenuVisible ? (
-          <div
-            className={`over-map-user-info-container ${
-              isUserMenuVisible ? "slide-right" : "slide-left"
-            }`}
-          >
-            <div className="over-map-user-info">
-              <UserCard></UserCard>
-              <div className="over-map-container-button-container">
-                <button
-                  className="over-map-button"
-                  onClick={() => {
-                    navigate("/user");
-                  }}
-                >
-                  Setting 
-                  <FontAwesomeIcon icon ={faGear} style={{paddingLeft: "7%",marginTop: "1%"}}/>
-                </button>
-                <button
-                  className="over-map-button"
-                  onClick={() => {
-                    navigate("/");
-                  }}
-                >
-                  Exit
-                  <FontAwesomeIcon icon ={faRightFromBracket} style={{paddingLeft: "7%",marginTop: "1%"}}/>
+        </SlidingPane>
 
+        {selectedLocation && (
+          <SlidingPane
+            className={`right-slide-pane ${
+              state.isSelectedLocationOpen
+                ? "slide-in-from-right"
+                : "slide-out-to-left "
+            }`}
+            overlayClassName="right-slide-pane-overlay"
+            isOpen={state.isSelectedLocationOpen}
+            onRequestClose={() => {
+              setState({ isSelectedLocationOpen: false });
+            }}
+          >
+            <div>
+              <div className="right-slide-pane-content">
+                <img
+                  className="right-slide-pane-img"
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ80amNC4WOH3oRdn-Od9SA16eAkY5ZqKLmD6RfkL1AhiqSWh7f4L8PDm_ywYiGwHiRPng&usqp=CAU"
+                ></img>
+                <button
+                  className="right-slide-pane-close-button"
+                  onClick={() => {
+                    setState({ isSelectedLocationOpen: false });
+                  }}
+                >
+                  {" "}
+                  <FontAwesomeIcon
+                    icon={faXmark}
+                    size="1x"
+                  />
                 </button>
+                <div className="right-slide-pane-button-container">
+                  <button
+                    className="info_window_container_call_button"
+                    onClick={() =>
+                      handleCallButton(selectedLocation.phone_number)
+                    }
+                  >
+                    <FontAwesomeIcon icon={faPhone} size="2x" />
+                  </button>
+                  <button
+                    className="info_window_container_direction_button"
+                    onClick={() =>
+                      handleDirectionButton(selectedLocation.location_name)
+                    }
+                  >
+                    <FontAwesomeIcon icon={faLocationArrow} size="2x" />
+                  </button>
+                </div>
+
+                <p>{selectedLocation.description}</p>
+                <p>Status: {selectedLocation.status}</p>
+                <p>Parking level: {selectedLocation.parking_level}</p>
+                <p>Charge price: {selectedLocation.pricing}</p>
               </div>
             </div>
-            <div className="over-map-info-slide-button-container">
-              <button
-                className="over-map-info-slide-button"
-                onClick={() => setIsUserMenuVisible(false)}
-              >
-                <FontAwesomeIcon
-                  className="slide-button-icon"
-                  icon={faCaretLeft}
-                  size="2x"
-                />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="avatar-container">
-            <Avatar
-              style={{ display: "flex", marginLeft: "0px", margin: "auto" }}
-              onClick={() => setIsUserMenuVisible(true)}
-              story="default"
-              online
-              src={
-                userInfo.avatar.startsWith("http") ? userInfo.avatar : undefined
-              }
-            >
-              {userInfo.avatar}
-            </Avatar>
-          </div>
+          </SlidingPane>
         )}
       </div>
     </Page>
